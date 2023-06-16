@@ -2,15 +2,24 @@
 Course: CSE 251
 Lesson Week: 07
 File: assingnment.py
-Author: <Your name here>
+Author: Mark Cuizon
 Purpose: Process Task Files
 
 Instructions:  See I-Learn
 
-TODO
 
 Add your comments here on the pool sizes that you used for your assignment and
 why they were the best choices.
+
+    prime_pool = mp.Pool(processes=2)   # 2 processes because this is CPU-bound.
+    word_pool = mp.Pool(processes=4)    # 4 processes because this is I/O bound, but by file.
+    upper_pool = mp.Pool(processes=2)   # 2 processes because this is CPU-bound.
+    sum_pool = mp.Pool(processes=2)     # 2 processes because this is CPU-bound.
+    name_pool = mp.Pool(processes=8)    # 8 processes because this is I/O bound, but by network.
+
+Also, I'm running on an AMD Ryzen 7 3700X CPU on Windows 10 with a handful of other programs in the background.
+This was the furthest I could do without freezing up other programs.
+The process ratio was also determined through trial and error. Adding more to name_pool did the most difference.
 
 
 """
@@ -55,58 +64,65 @@ def is_prime(n: int):
     return True
  
 def task_prime(value):
-    """
-    Use the is_prime() above
-    Add the following to the global list:
-        {value} is prime
-            - or -
-        {value} is not prime
-    """
-    pass
+    if is_prime(value) == True:         # If the value is prime according to the function above,
+        return f"{value} is prime"      # return the designated message.
+    else:                               # Otherwise,
+        return f"{value} is not prime"  # return the other designated message.
+    
+def prime_callback(result):             
+    result_primes.append(result)        # Appends the result to result_primes.
+    
 
 def task_word(word):
-    """
-    search in file 'words.txt'
-    Add the following to the global list:
-        {word} Found
-            - or -
-        {word} not found *****
-    """
-    pass
+    with open('words.txt', 'r') as file:# While reading the words.txt file,
+        for line in file:               # for every line,
+            if word in line:            # if the word exists in the line
+                return f"{word} Found"  # return the designated message.
+    return f"{word} not found *****"    # Otherwise, return the other designated message.
+            
+def word_callback(result):
+    result_words.append(result)         # Appends the result to result_words.
 
 def task_upper(text):
-    """
-    Add the following to the global list:
-        {text} ==>  uppercase version of {text}
-    """
-    pass
+    return text.upper()                 # Simply returns the uppercase version of what is passed in.
+
+def upper_callback(result):
+    result_upper.append(result)         # Appends the result to result_upper.
 
 def task_sum(start_value, end_value):
-    """
-    Add the following to the global list:
-        sum of {start_value:,} to {end_value:,} = {total:,}
-    """
-    pass
+    total = start_value + end_value     # The designated total is the start and end value added together,
+    return f"sum of {start_value:,} to {end_value:,} = {total:,}"   # then return the designated message.
+
+def sum_callback(result):
+    result_sums.append(result)          # Append the result to result_sums.
 
 def task_name(url):
-    """
-    use requests module
-    Add the following to the global list:
-        {url} has name <name>
-            - or -
-        {url} had an error receiving the information
-    """
-    pass
+    #try:                                       # Try except loop. Let's hope this works.
+        response = requests.get(url, timeout=5) # Requests on the url for a response.
+        if response.status_code == 200:         # If the request goes through,
+        #response.raise_for_status()            # Raise an error if it doesn't go through.
+            data = response.json()              # JSON is pulled from the response.
+            name = data['name']                 # A variable to simplyify things.
+            return f"{url} has name {name}"     # Return the designated message.
+    #elif response.status_code == 404:          # If it doesn't go through,
+    #except requests.exceptions.RequestException as e:   # For this exception,
+        return f"{url} had an error receiving the information"  # Return the other designated message.
+    
+def name_callback(result):
+    result_names.append(result)         # Append the result to result_names
 
 
 def main():
     log = Log(show_terminal=True)
     log.start_timer()
 
-    # TODO Create process pools
 
-    # TODO you can change the following
-    # TODO start and wait pools
+    prime_pool = mp.Pool(processes=2)   # 2 processes because this is CPU-bound.
+    word_pool = mp.Pool(processes=4)    # 4 processes because this is I/O bound, but by file.
+    upper_pool = mp.Pool(processes=2)   # 2 processes because this is CPU-bound.
+    sum_pool = mp.Pool(processes=2)     # 2 processes because this is CPU-bound.
+    name_pool = mp.Pool(processes=8)    # 8 processes because this is I/O bound, but by network.
+
     
     count = 0
     task_files = glob.glob("*.task")
@@ -118,19 +134,33 @@ def main():
         count += 1
         task_type = task['task']
         if task_type == TYPE_PRIME:
-            task_prime(task['value'])
+            #task_prime(task['value'],)
+            prime_pool.apply_async(task_prime, args=(task['value'],), callback=prime_callback)          # Adds the task to an asynchronous pool.
         elif task_type == TYPE_WORD:
-            task_word(task['word'])
+            #task_word(task['word'])
+            word_pool.apply_async(task_word, args=(task['word'],), callback=word_callback)              # Adds the task to an asynchronous pool.
         elif task_type == TYPE_UPPER:
-            task_upper(task['text'])
+            #task_upper(task['text'])
+            upper_pool.apply_async(task_upper, args=(task['text'],), callback=upper_callback)           # Adds the task to an asynchronous pool.
         elif task_type == TYPE_SUM:
-            task_sum(task['start'], task['end'])
+            #task_sum(task['start'], task['end'])
+            sum_pool.apply_async(task_sum, args=(task['start'], task['end']), callback=sum_callback)    # Adds the task to an asynchronous pool.
         elif task_type == TYPE_NAME:
-            task_name(task['url'])
+            #task_name(task['url'])
+            name_pool.apply_async(task_name, args=(task['url'],), callback=name_callback)               # Adds the task to an asynchronous pool.
         else:
             log.write(f'Error: unknown task type {task_type}')
 
-
+    prime_pool.close()
+    word_pool.close()
+    upper_pool.close()
+    sum_pool.close()
+    name_pool.close()   # Closes all pools,
+    prime_pool.join()
+    word_pool.join()
+    upper_pool.join()
+    sum_pool.join()
+    name_pool.join()    # then joins them all.
 
     # Do not change the following code (to the end of the main function)
     def log_list(lst, log):

@@ -2,7 +2,7 @@
 Course: CSE 251
 Lesson Week: 05
 File: assignment.py
-Author: <Your name>
+Author: Mark Cuizon
 
 Purpose: Assignment 05 - Factories and Dealers
 
@@ -18,6 +18,9 @@ Instructions:
 - You are not allowed to use the normal Python Queue object.  You must use Queue251.
 - the shared queue between the threads that are used to hold the Car objects
   can not be greater than MAX_QUEUE_SIZE
+
+  I ended up giving up after multiple tries of getting the Dealer to catch the sentinel value.
+  I'm absolutely clueless on why it isn't receiving it.
 
 """
 
@@ -87,29 +90,73 @@ class Queue251():
 class Factory(threading.Thread):
     """ This is a factory.  It will create cars and place them on the car queue """
 
-    def __init__(self):
+    def __init__(self, car_queue, car_space_semaphore, car_available_semaphore, factory_barrier, dealer_count):
+        threading.Thread.__init__(self)
         self.cars_to_produce = random.randint(200, 300)     # Don't change
+        self.car_queue = car_queue
+        self.car_space_semaphore = car_space_semaphore
+        self.car_available_semaphore = car_available_semaphore
+        self.factory_barrier = factory_barrier
+        self.dealer_count = dealer_count
+        self.cars_produced = 0                      # Track the number of cars produced
 
 
     def run(self):
-        # TODO produce the cars, the send them to the dealerships
+        for _ in range(self.cars_to_produce):       # For the number of cars this factory will produce,
+            new_car = Car()                         # Create a new car
+            self.cars_produced += 1                 # Increment the number of cars produced
+            self.car_space_semaphore.acquire()  # Wait until there is space available in the dealership queue
+            self.car_queue.put(new_car)             # Place the car on the car queue
+            self.car_available_semaphore.release()
+    
+        self.factory_barrier.wait()                 # Wait until all of the factories are finished producing cars
 
-        # TODO wait until all of the factories are finished producing cars
+        if self.factory_barrier.n_waiting == 0:     # "Wake up/signal" the dealerships one more time. Select one factory to do this
+            #for _ in range(MAX_QUEUE_SIZE):
+            print("barrier reached")
+            for _ in range(self.dealer_count):
+                self.car_queue.put(None)
+                print("sentinel value sent")
+                self.car_space_semaphore.release()
 
-        # TODO "Wake up/signal" the dealerships one more time.  Select one factory to do this
-        pass
 
 
 
 class Dealer(threading.Thread):
     """ This is a dealer that receives cars """
 
-    def __init__(self):
-        pass
+    def __init__(self, car_queue, car_space_semaphore, car_available_semaphore, i, dealer_stats):
+        threading.Thread.__init__(self)
+        self.car_queue = car_queue
+        self.car_available_semaphore = car_available_semaphore
+        self.car_space_semaphore = car_space_semaphore
+        self.i = i
+        self.dealer_stats = dealer_stats
 
     def run(self):
         while True:
-            # TODO handle a car
+            # Wait until there is a car in the car_queue
+            self.car_available_semaphore.acquire()
+            #if not self.car_queue.items:  # if the queue is empty, release the semaphore and break the loop
+                #self.dealer_semaphore.release()
+                #break
+
+            car = self.car_queue.get()
+            print("Received car:", repr(car))
+            print("increment")
+
+            # Check for the sentinel value
+            if car is None:
+                print("sentinel value receieved")
+                self.car_space_semaphore.release()
+                break
+
+            # Increment the count of cars sold by this dealer
+            self.dealer_stats[self.i] += 1
+
+            # Signal that a slot in the car_queue is available
+            self.car_space_semaphore.release()
+
 
             # Sleep a little - don't change.  This is the last line of the loop
             time.sleep(random.random() / (SLEEP_REDUCE_FACTOR + 0))
@@ -122,24 +169,39 @@ def run_production(factory_count, dealer_count):
     """
 
     # TODO Create semaphore(s) if needed
+    car_space_semaphore = threading.Semaphore(MAX_QUEUE_SIZE)
+    car_available_semaphore = threading.Semaphore(0)
     # TODO Create queue
+    car_queue = Queue251()
     # TODO Create lock(s) if needed
+    #queue_lock = threading.Lock()
     # TODO Create barrier
-
+    factory_barrier = threading.Barrier(factory_count)
     # This is used to track the number of cars receives by each dealer
     dealer_stats = list([0] * dealer_count)
 
     # TODO create your factories, each factory will create CARS_TO_CREATE_PER_FACTORY
-
+    factories = [Factory(car_queue, car_space_semaphore, car_available_semaphore, factory_barrier, dealer_count) for _ in range(factory_count)]
     # TODO create your dealerships
+    dealers = [Dealer(car_queue, car_space_semaphore, car_available_semaphore, i, dealer_stats) for i in range(dealer_count)]
 
     log.start_timer()
 
     # TODO Start all dealerships
-
+    for dealer in dealers:
+        dealer.start()
     # TODO Start all factories
+    for factory in factories:
+        factory.start()
 
     # TODO Wait for factories and dealerships to complete
+    for factory in factories:
+        factory.join()
+    for dealer in dealers:
+        dealer.join()
+
+    # Collect statistics
+    factory_stats = [factory.cars_produced for factory in factories]
 
     run_time = log.stop_timer(f'{sum(dealer_stats)} cars have been created')
 
@@ -160,7 +222,7 @@ def main(log):
         log.write(f'Dealerships    : {dealerships}')
         log.write(f'Run Time       : {run_time:.4f}')
         log.write(f'Max queue size : {max_queue_size}')
-        log.write(f'Factor Stats   : {factory_stats}')
+        log.write(f'Factory Stats  : {factory_stats}')
         log.write(f'Dealer Stats   : {dealer_stats}')
         log.write('')
 
