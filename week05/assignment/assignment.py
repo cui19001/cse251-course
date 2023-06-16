@@ -93,7 +93,7 @@ class Factory(threading.Thread):
 
     def run(self):
         # TODO produce the cars, the send them to the dealerships
-
+        
         # TODO wait until all of the factories are finished producing cars
 
         # TODO "Wake up/signal" the dealerships one more time.  Select one factory to do this

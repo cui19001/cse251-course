@@ -22,25 +22,41 @@ import filecmp
 # Include cse 251 common Python files
 from cse251 import *
 
-def sender():
-    """ function to send messages to other end of pipe """
-    '''
-    open the file
-    send all contents of the file over a pipe to the other process
-    Note: you must break each line in the file into words and
-          send those words through the pipe
-    '''
-    pass
+BLOCK = 1024 * 4
+END_MESSAGE = 'done'
+
+def sender(conn, filename):                     # Pipe sender.
+    with open(filename, 'r') as file:           # Reads the file into `file`. Consider implementing Binary.
+        #for line in file:                       # For each line in the file,
+        while True:
+            #words = line.split()                # Split the line into words by whitespace
+            word = f.read(BLOCK)
+            if not word:
+                break
+            conn.send(word)
+            #for word in words:                  # For each word,
+                #conn.send(word.encode('utf-8')) # Send it over the pipe as unicode.
+                #count += 1
+    #conn.send(None)                             # Sentinel value
+    #conn.send(count)
+    conn.close()                                # Closes the pipe.
 
 
-def receiver():
-    """ function to print the messages received from other end of pipe """
-    ''' 
-    open the file for writing
-    receive all content through the shared pipe and write to the file
-    Keep track of the number of items sent over the pipe
-    '''
-    pass
+def receiver(conn, filename_out, count):        # Pipe receiver.
+    count.value = 0
+    with open(filename_out, 'w') as file:       # Open an output file for writing
+        while True:                             # While continuous,
+            try:
+            word = conn.recv()                  # Receive a word from the pipe
+            #if word is None:                        # If it isn't a word,
+                #break                           # Break continuity.
+            ffile.write(word)
+        escept E0FError:
+        break
+            count.value += 1                          # Increment once received
+            file.write(word.decode('utf-8') + ' ')  # write the word as unicode plus space
+        conn.close()                            # Close the pipe
+        #return count                            # Return the number of words passed
 
 
 def are_files_same(filename1, filename2):
@@ -49,23 +65,27 @@ def are_files_same(filename1, filename2):
 
 
 def copy_file(log, filename1, filename2):
-    # TODO create a pipe 
-    
-    # TODO create variable to count items sent over the pipe
-
+    parent_conn, child_conn = mp.Pipe() # create a pipe 
+    count_pipe = Value('i', 0)                     # create variable to count items sent over the pipe
     # TODO create processes 
+    sender_process = mp.Process(target=sender, args=(child_conn, filename1))
+    receiver_process = mp.Process(target=receiver, args=(parent_conn, filename2, count_pipe))
 
     log.start_timer()
     start_time = log.get_time()
 
     # TODO start processes 
-    
+    sender_process.start()
+    receiver_process.start()
+    #count_pipe = receiver_process.join()
     # TODO wait for processes to finish
+    sender_process.join()
+    receiver_process.join()
 
     stop_time = log.get_time()
 
-    log.stop_timer(f'Total time to transfer content = {PUT YOUR VARIABLE HERE}: ')
-    log.write(f'items / second = {PUT YOUR VARIABLE HERE / (stop_time - start_time)}')
+    log.stop_timer(f'Total time to transfer content = {count_pipe.value}: ')
+    log.write(f'items / second = {count_pipe.value / (stop_time - start_time)}')
 
     if are_files_same(filename1, filename2):
         log.write(f'{filename1} - Files are the same')

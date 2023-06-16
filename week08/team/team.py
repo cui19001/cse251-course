@@ -74,8 +74,10 @@ def merge_normal(arr):
 def merge_sort_thread(arr):
     # TODO - Add your code here to use threads.  Each time the merge algorithm does a recursive
     #        call, you need to create a thread to handle that call
+    thread = threading.Thread(target=merge_sort, args=(arr,))
+    thread.start()
     pass
-
+# Apparently, to create this, do the len(arr) > 1 thing and find a mid section, divide the array elements, then create 2 threads which will be recursive. and it does this until len(arr) > 1 which is the base case.
 
 # -----------------------------------------------------------------------------
 def merge_sort_process(arr):

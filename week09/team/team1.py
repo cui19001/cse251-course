@@ -58,8 +58,51 @@ MAX_MEALS_EATEN = PHILOSOPHERS * 5
 
 def main():
     # TODO - create the forks
+    #5 forks
+    forks = [1, 2, 3, 4, 5]
+    lock = threading.Lock()
+    eaten = 0
+    def eat(eating, whois, eaten, forks):
+        #global forks
+        if lock.acquire(timeout = eating):
+          try:
+            print(f"philosopher {whois} eating...")
+            print(forks[whois])
+            #print(forks[whois + 1])
+            eaten += 1
+          finally:
+              lock.release()
+        print(f"philosopher {whois} thinking...")
+        time.sleep(3)
     # TODO - create PHILOSOPHERS philosophers
+    #5 philosophers
+    def philosopher(name):
+        print("philosopher eating...")
+        time.sleep(3)
+        print("philosopher thinking...")
+        time.sleep(3)
+    #philosophers[5]
     # TODO - Start them eating and thinking
+    #designate philosophers by number. have 1 and 3 eat, then think, then 2 and 4 eat and the think, then 3 and 5, then 4 and 1.
+    philosopher1 = threading.Thread(target=eat, args=(3, 1, eaten, forks))
+    philosopher2 = threading.Thread(target=eat, args=(3, 2, eaten, forks))
+    philosopher3 = threading.Thread(target=eat, args=(3, 3, eaten, forks))
+    philosopher4 = threading.Thread(target=eat, args=(3, 4, eaten, forks))
+    philosopher5 = threading.Thread(target=eat, args=(3, 5, eaten, forks))
+
+    philosopher1.start()
+    philosopher2.start()
+    philosopher3.start()
+    philosopher4.start()
+    philosopher5.start()
+
+    if (eaten == MAX_MEALS_EATEN):
+       philosopher1.join()
+       philosopher2.join()
+       philosopher3.join()
+       philosopher4.join()
+       philosopher5.join()
+    
     # TODO - Display how many times each philosopher ate
 
     pass

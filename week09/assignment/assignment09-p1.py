@@ -34,7 +34,27 @@ def solve_path(maze):
         
     # TODO start add code here
     path = []
-    return path
+
+    def _solve(x, y):                           # recursion
+        print(f'{x = }, {y = }')                # print each recursion
+        
+        if maze.at_end(x, y):                   # base case
+            return True                         # for if we found the end
+        
+        poss = maze.get_possible_moves(x, y)    # tuples
+        for a, b in poss:                       # for each possible move
+            maze.move(a, b, COLOR)              # color the bmp
+            if _solve(a, b):                    # if it leads to the end,
+                return True                     # return true
+            maze.restore(a, b)                  # restores the maze part that doesn't lead to the end
+            
+        return False                            # otherwise, return false
+    
+    start = maze.get_start_pos()                # we all must start somewhere
+    maze.move(start[0], start[1], COLOR)        # color the start
+    _solve(start[0], start[1])                  # begin recursion
+
+    return path                                 # this part is the part he isn't doing for us.
 
 
 def get_path(log, filename):

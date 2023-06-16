@@ -2,7 +2,7 @@
 Course: CSE 251
 Lesson Week: 07
 File: assingnment.py
-Author: <Your name here>
+Author: Mark Cuizon
 Purpose: Process Task Files
 
 Instructions:  See I-Learn
