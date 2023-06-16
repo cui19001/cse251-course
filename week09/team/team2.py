@@ -67,8 +67,43 @@ MAX_MEALS = PHILOSOPHERS * 5
 
 def main():
     # TODO - create the waiter (A class would be best here)
+    class Waiter:
+        def __init__(self, arg1, arg2):
+            self.arg1 = arg1
+
+        def my_method(self):
+            print("hi")
+
+        def Check(self, id):
+            print("hi")
+            
     # TODO - create the forks
+    Forks = [True for _ in range(5)]
     # TODO - create PHILOSOPHERS philosophers
+    class Philosopher:
+        def __init__(self, id):
+            self.id = id
+            self.eat(self.id)
+            self.think()
+
+        def eat(self):
+            Forks[self.id - 1] = False
+            Forks[self.id] = False
+            time.sleep(3)
+            Forks[self.id - 1] = True
+            Forks[id] = True
+            
+        def think():
+            time.sleep(3)
+
+        def ask_waiter(self, Waiter):
+            if (Waiter.Check(id)):
+                self.eat(id)
+            else:
+                time.sleep(5)
+        
+        
+
     # TODO - Start them eating and thinking
     # TODO - Display how many times each philosopher ate
 

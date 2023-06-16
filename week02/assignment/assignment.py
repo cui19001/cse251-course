@@ -75,3 +75,38 @@ def main():
 
 if __name__ == "__main__":
     main()
+    response = requests.get(TOP_API_URL)
+    
+    # Check the status code to see if the request succeeded.
+    if response.status_code == 200:
+        data = response.json()
+        print(data)
+
+		# Example to get person 1 url
+        print('\nHere is the URL for person id = 1:', f'{data["people"]}1')
+    else:
+        print('Error in requesting ID')
+    # Make a GET request to the URL for person id = 1
+    response = requests.get('http://127.0.0.1:8790/films/6/')
+
+# Check if the request was successful (HTTP status code 200)
+    if response.status_code == 200:
+    # Access the response data (content)
+      film_info = response.json()  # Assuming the response contains JSON data
+    # Process the data as needed
+      print(film_info['title'])
+    else:
+      print('Error:', response.status_code)
+    # Display results
+    log = Log(show_terminal=False)
+    log.write('-----------------------------------------')
+    log.write(f'Title   : {film_info["title"]}')
+    log.write(f'Director: {film_info["director"]}')
+    log.write(f'Producer: {film_info["producer"]}')
+    log.write(f'Released: {film_info["release_date"]}\n')
+
+    #for category in ["characters", "planets", "starships", "vehicles", "species"]:
+        #data = retrieve_data(film_info[category])
+        #names = sorted([item["name"] for item in data])
+        #log.write(f'{category.capitalize()}: {len(names)}')
+        #log.write(", ".join(names) + '\n')

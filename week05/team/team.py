@@ -42,8 +42,32 @@ def is_prime(n: int) -> bool:
     return True
 
 # TODO create read_thread function
+def read_thread(filename, queue, amount_of_numbers_in_queue, unused_spots_in_queue):
+    with open(filename, 'r') as file:
+        for line in file:
+            # queue.put(line.strip())
+            unused_spots_in_queue.acquire()         
+            queue.put(int(line))
+            amount_of_numbers_in_queue.release()    # Adds 1
+
+    for _ in range(PRIME_PROCESS_COUNT):
+        queue.put(-1)
+        amount_of_numbers_in_queue.release()    # Adds 1
 
 # TODO create prime_process function
+def process_prime(queue, primes, amount_of_numbers_in_queue, unused_spots_in_queue):
+    while True:
+        amount_of_numbers_in_queue.acquire()
+        number = queue.get()        # Automatically blocks if queue is empty. A feature of Python's queue.
+        
+        if number < 0:
+            break                   # Breaks if queue is done.
+
+        if is_prime(number):
+            print(number)
+            primes.append(number)   # append() is thread safe
+
+        unused_spots_in_queue.release()
 
 def create_data_txt(filename):
     # only create if is doesn't exist 
@@ -63,14 +87,28 @@ def main():
     log.start_timer()
 
     # TODO Create shared data structures
+    que = mp.Manager().Queue()
+    primes = mp.Manager().list()
+
+    amount_of_numbers_in_queue = mp.Semaphore(0)    # Forces something to equal 10 always.
+    unused_spots_in_queue = mp.Semaphore(10)
+
 
     # TODO create reading thread
+    reader = threading.Thread(target=read_thread, args=(filename, queue,))
 
     # TODO create prime processes
+    processes = [mp.Process(target=process_prime, args=()) for _ in range(PRIME_PROCESS_COUNT)]
 
     # TODO Start them all
+    for p in processes:
+        p.start()
+        reader.start()
 
     # TODO wait for them to complete
+    reader.join()
+    for p in processes:
+        p.join()
 
     log.stop_timer(f'All primes have been found using {PRIME_PROCESS_COUNT} processes')
 
