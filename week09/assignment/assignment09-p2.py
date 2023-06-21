@@ -2,7 +2,7 @@
 Course: CSE 251 
 Lesson Week: 09
 File: assignment09-p2.py 
-Author: <Add name here>
+Author: Mark Cuizon
 
 Purpose: Part 2 of assignment 09, finding the end position in the maze
 
@@ -18,11 +18,14 @@ change the program to display the found path to the exit position.
 
 What would be your strategy?  
 
-<Answer here>
+    My strategy would be to have the thread that found the exit to backtrack, 
+    coloring its backtracked path, back to its parent and then backtrack 
+    through the parent's path until it reaches the parent's parent and so forth.
 
 Why would it work?
 
-<Answer here>
+    This works logically because the thread that found the end is the one that 
+    can claim the found path to the exit position.
 
 """
 import math
@@ -73,14 +76,58 @@ def get_color():
     current_color_index += 1
     return color
 
+def thread_solve(maze, pos, color):
+    """ Create new thread at each fork, continues the path if dead-end not reached """
+    global stop, thread_count
+
+    if stop:   # if any thread finds the exit, all others should stop
+        return
+    
+    if maze.at_end(pos[0], pos[1]):  # if current position is the exit, stop all threads
+        stop = True
+        maze.move(pos[0], pos[1], color)
+        return True
+    
+    maze.move(pos[0], pos[1], color)  # color the bmp
+
+    threads = []
+    poss = maze.get_possible_moves(pos[0], pos[1])    # tuples
+    if len(poss) > 1:
+        # Create a new thread for all paths except the last one
+        for new_pos in poss[:-1]:
+            new_thread = threading.Thread(target=thread_solve, args=(maze, new_pos, get_color()))
+            threads.append(new_thread)
+            thread_count += 1
+            new_thread.start()
+
+        # For the last path, continue on the same thread
+        if thread_solve(maze, poss[-1], color):
+            return True
+
+        # wait for all threads to complete
+        for t in threads:
+            t.join()
+
+    else:
+        if poss:
+            if thread_solve(maze, poss[0], color):
+                return True
+
+    #maze.restore(pos[0], pos[1])   # restores the maze part that doesn't lead to the end
+    return False  # otherwise, return false
+
+
 def solve_find_end(maze):
     """ finds the end position using threads.  Nothing is returned """
     # When one of the threads finds the end position, stop all of them
     global stop
     stop = False
 
+    thread_count + 1
 
-    pass
+    thread_solve(maze, maze.get_start_pos(), get_color())
+
+    #pass
 
 
 def find_end(log, filename, delay):
