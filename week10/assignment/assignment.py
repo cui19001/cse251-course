@@ -54,7 +54,7 @@ Instructions:
                     print(<variable>, end=', ', flush=True)
 
 Add any comments for me:
-
+The program does exactly as the instructions say at the speed expected of a shared list.
 """
 
 import random
