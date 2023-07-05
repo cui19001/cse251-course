@@ -2,6 +2,9 @@
 Course: CSE 251
 Lesson Week: 11
 File: Assignment.py
+
+I think this assignment meets requirements because it fulfills all the rules of using the room.
+On top of that, the output of this assignment matches the sample output with similar numbers in parties had and times cleaned.
 """
 
 import time
