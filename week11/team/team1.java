@@ -29,6 +29,48 @@ Part 3:
 import java.util.Random; 
 import java.lang.Math; 
 
+class PrimeThread extends Thread {
+  private int[] array;
+  private int startIndex;
+  private int endIndex;
+  private int id;
+
+  public PrimeThread(int[] array, int startIndex, int endIndex, int i) {
+    this.array = array;
+    this.startIndex = startIndex;
+    this.endIndex = endIndex;
+    this.id = i + 1;
+  }
+
+  static boolean isPrime(int n) 
+  { 
+      // Corner cases 
+      if (n <= 1) return false; 
+      if (n <= 3) return true; 
+    
+      // This is checked so that we can skip  
+      // middle five numbers in below loop 
+      if (n % 2 == 0 || n % 3 == 0) return false; 
+    
+      for (int i = 5; i * i <= n; i = i + 6) 
+        if (n % i == 0 || n % (i + 2) == 0) 
+          return false; 
+    
+      return true; 
+  }
+  
+  public void run() {
+    System.out.println("This is thread #" + id + " starting out.");
+    for (int i = startIndex; i <= endIndex; i++) {
+      if (isPrime(array[i])) {
+        System.out.println(array[i]);
+      }
+    }
+    System.out.println("Thread #" + id + " done.");
+  }
+  
+}
+
 class Main {
 
   static boolean isPrime(int n) 
@@ -62,12 +104,19 @@ class Main {
     }
 
   // TODO - this is just sample code. you can remove it.
-    for (int i = 0; i < count; i++) 
-    {
-      if (isPrime(array[i]))
-      {
-        System.out.println(array[i]);
+    int numThreads = 4;
+    int segmentSize = array.length / numThreads;
+    int remainingElements = array.length % numThreads;
+    int startIndex = 0;
+    int endIndex = -1;
+    for (int i = 0; i < numThreads; i++) {
+      startIndex = endIndex + 1;
+      endIndex = startIndex + segmentSize - 1;
+      if (i < remainingElements) {
+        endIndex++;
       }
+      PrimeThread thread = new PrimeThread(array, startIndex, endIndex, i);
+      thread.start();
     }
   }
 }
