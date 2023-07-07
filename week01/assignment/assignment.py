@@ -2,7 +2,7 @@
 Course: CSE 251 
 Lesson Week: 01
 File: assignment.py 
-Author: <Add name here>
+Author: Mark Cuizon
 
 Purpose: Drawing with Python Turtle
 
@@ -20,6 +20,9 @@ Instructions:
   currently imported below.
 - You can create other functions if needed.
 - No global variables.
+
+I think my assignment meets requirements because my threads do exactly as the instructions say it should do.
+It even does the weird part where they take turns drawing shapes. I used a lock.
 
 """
 
