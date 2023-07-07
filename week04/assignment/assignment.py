@@ -2,7 +2,7 @@
 Course: CSE 251
 Lesson Week: 04
 File: assignment.py
-Author: <Your name>
+Author: Mark Cuizon
 
 Purpose: Assignment 04 - Factory and Dealership
 
@@ -76,20 +76,23 @@ class Queue251():
 class Factory(threading.Thread):
     """ This is a factory.  It will create cars and place them on the car queue """
 
-    def __init__(self):
-        # TODO, you need to add arguments that will pass all of data that 1 factory needs
-        # to create cars and to place them in a queue.
-        pass
+    def __init__(self, queue, car_space_semaphore, car_available_semaphore):    # Initialize the class with necessary parameters
+        threading.Thread.__init__(self)                                         # Initialize the parent threading.Thread class
+        self.queue = queue                                                      # Queue for storing cars
+        self.car_space_semaphore = car_space_semaphore                          # Semaphore to check if there is space to produce a car
+        self.car_available_semaphore = car_available_semaphore                  # Semaphore to signal when a car is available
 
 
-    def run(self):
-        for i in range(CARS_TO_PRODUCE):
-            # TODO Add you code here
-            """
-            create a car
-            place the car on the queue
-            signal the dealer that there is a car on the queue
-           """
+    def run(self):                                  # Method that is run when the thread starts
+        for i in range(CARS_TO_PRODUCE):            # Loop to produce the required number of cars
+            self.car_space_semaphore.acquire()      # Check if there is space to produce a car, wait if not
+            new_car = Car()                         # Create a new car
+            self.queue.put(new_car)                 # Add the new car to the queue
+            self.car_available_semaphore.release()  # Signal that a new car is available
+            time.sleep(int(random.random() * 3) + 1)# Wait for a random time (between 1 and 3 seconds) before producing the next car
+        self.car_space_semaphore.acquire()
+        self.queue.put(None)                        # Add a special value to the queue to indicate that production has stopped.
+        self.car_available_semaphore.release()
 
         # signal the dealer that there there are not more cars
         pass
@@ -98,18 +101,32 @@ class Factory(threading.Thread):
 class Dealer(threading.Thread):
     """ This is a dealer that receives cars """
 
-    def __init__(self):
-        # TODO, you need to add arguments that pass all of data that 1 Dealer needs
-        # to sell a car
-        pass
+    def __init__(self, queue, car_space_semaphore, car_available_semaphore, queue_stats):   # Initialize the class with necessary parameters
+        threading.Thread.__init__(self)                                                     # Initialize the parent threading.Thread class
+        self.queue = queue                                                                  # Queue for storing cars
+        self.car_space_semaphore = car_space_semaphore                                      # Semaphore to check if there is space to produce a car
+        self.car_available_semaphore = car_available_semaphore                              # Semaphore to signal when a car is available
+        self.queue_stats = queue_stats                                                      # queue_stats list to keep track of queue size
+        self.cars_sold = 0                                                                  # count of sold cars
 
-    def run(self):
-        while True:
-            # TODO Add your code here
-            """
-            take the car from the queue
-            signal the factory that there is an empty slot in the queue
-            """
+    def run(self):                                  # Method that is run when the thread starts
+        while True:                                 # Continuously try to sell cars
+            self.car_available_semaphore.acquire()  # Wait until a car is available
+            queue_size = self.queue.size()          # get the current queue size
+
+            # increment the count for this queue size in queue_stats
+            if queue_size < MAX_QUEUE_SIZE:
+                self.queue_stats[queue_size] += 1
+
+            sold_car = self.queue.get()             # Remove a car from the queue to sell
+            if sold_car is None:                    # Stop selling cars when the special value is encountered.
+                break
+            self.car_space_semaphore.release()      # Signal that there is now space for a new car
+            self.cars_sold += 1                     # increment the count of sold cars
+
+            
+            if self.cars_sold >= CARS_TO_PRODUCE:   # check if all cars have been sold
+                break                               # break the loop if so
 
             # Sleep a little after selling a car
             # Last statement in this for loop - don't change
@@ -120,23 +137,26 @@ class Dealer(threading.Thread):
 def main():
     log = Log(show_terminal=True)
 
-    # TODO Create semaphore(s)
-    # TODO Create queue251 
+    car_space_semaphore = threading.Semaphore(MAX_QUEUE_SIZE)   # Semaphore to check if there is space to produce a car
+    car_available_semaphore = threading.Semaphore(0)            # Semaphore to signal when a car is available
+    queue = Queue251()                                          # Queue for storing cars
     # TODO Create lock(s) ?
 
     # This tracks the length of the car queue during receiving cars by the dealership
     # i.e., update this list each time the dealer receives a car
     queue_stats = [0] * MAX_QUEUE_SIZE
 
-    # TODO create your one factory
+    factory = Factory(queue, car_space_semaphore, car_available_semaphore)                  # Creating an instance of the Factory class. 
 
-    # TODO create your one dealership
+    dealership = Dealer(queue, car_space_semaphore, car_available_semaphore, queue_stats)   # Creating an instance of the Dealer class. 
 
     log.start_timer()
 
-    # TODO Start factory and dealership
+    factory.start()
+    dealership.start()
 
-    # TODO Wait for factory and dealership to complete
+    factory.join()
+    dealership.join()
 
     log.stop_timer(f'All {sum(queue_stats)} have been created')
 

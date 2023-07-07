@@ -2,7 +2,7 @@
 Course: CSE 251 
 Lesson Week: 09
 File: assignment09-p1.py 
-Author: <Add name here>
+Author: Mark Cuizon
 
 Purpose: Part 1 of assignment 09, finding a path to the end position in a maze
 
@@ -54,7 +54,7 @@ def solve_path(maze):
     maze.move(start[0], start[1], COLOR)        # color the start
     _solve(start[0], start[1])                  # begin recursion
 
-    return path                                 # this part is the part he isn't doing for us.
+    #return path                                 #
 
 
 def get_path(log, filename):
