@@ -168,9 +168,61 @@ def run_with_threads(tur, log, main_turtle):
     log.start_timer('Start Drawing With Threads')
     tur.move(0, 0)
 
-    # TODO - Start add your code here.
-    # You need to use 4 threads where each thread concurrently drawing one type of shape.
-    # You are free to change any functions in this code except main()
+
+
+    def draw_squares_lock(tur, pen):
+        """Draw a group of squares while passing the pen to other threads"""
+        for x in range(-300, 350, 200):
+            for y in range(-300, 350, 200):
+                pen.acquire()
+                draw_square(tur, x - 50, y + 50, 100)
+                pen.release()
+
+
+    def draw_circles_lock(tur, pen):
+        """Draw a group of circles while passing the pen to other threads"""
+        for x in range(-300, 350, 200):
+            for y in range(-300, 350, 200):
+                pen.acquire()
+                draw_circle(tur, x, y-2, 50)
+                pen.release()
+
+
+    def draw_triangles_lock(tur, pen):
+        """Draw a group of triangles while passing the pen to other threads"""
+        for x in range(-300, 350, 200):
+            for y in range(-300, 350, 200):
+                pen.acquire()
+                draw_triangle(tur, x-30, y-30+10, 60)
+                pen.release()
+
+
+    def draw_rectangles_lock(tur, pen):
+        """Draw a group of Rectangles while passing the pen to other threads"""
+        for x in range(-300, 350, 200):
+            for y in range(-300, 350, 200):
+                pen.acquire()
+                draw_rectangle(tur, x-10, y+5, 20, 15)
+                pen.release()
+
+    pen = threading.Lock()                                                  # This is the lock.
+
+    shape1 = threading.Thread(target=draw_squares_lock, args=(tur, pen))    # First thread.
+    shape2 = threading.Thread(target=draw_circles_lock, args=(tur, pen))    # Second thread.
+    shape3 = threading.Thread(target=draw_triangles_lock, args=(tur, pen))  # Third thread.
+    shape4 = threading.Thread(target=draw_rectangles_lock, args=(tur, pen)) # Fourth thread.
+
+    shape1.start()                                                          # Start the first thread.
+    shape2.start()                                                          # Also start the second thread.
+    shape3.start()                                                          # And the third thread.
+    shape4.start()                                                          # As well as the fourth thread.
+
+    shape1.join()                                                           # Wait for the first thread to finish.
+    shape2.join()                                                           # Then wait for the second thread to finish.
+    shape3.join()                                                           # And then the third thread.
+    shape4.join()                                                           # And finally, the fourth thread.
+
+
 
     log.step_timer('All drawing commands have been created')
 
