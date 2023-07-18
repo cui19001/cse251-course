@@ -80,7 +80,9 @@ if __name__ == "__main__":
     # Check the status code to see if the request succeeded.
     if response.status_code == 200:
         data = response.json()
-        print(data)
+        #print(data['films'])
+        #print(json.dumps(requests.get(data['films']).json(), indent=4))
+        print(requests.get(data['films']).json(), indent=4)
 
 		# Example to get person 1 url
         print('\nHere is the URL for person id = 1:', f'{data["people"]}1')
@@ -94,7 +96,9 @@ if __name__ == "__main__":
     # Access the response data (content)
       film_info = response.json()  # Assuming the response contains JSON data
     # Process the data as needed
-      print(film_info['title'])
+      #print(film_info['title'])
+      #print(json.dumps(film_info, indent=4))
+      print(requests.get(film_info['characters'][0]).json()['name'])
     else:
       print('Error:', response.status_code)
     # Display results
@@ -103,8 +107,23 @@ if __name__ == "__main__":
     log.write(f'Title   : {film_info["title"]}')
     log.write(f'Director: {film_info["director"]}')
     log.write(f'Producer: {film_info["producer"]}')
-    log.write(f'Released: {film_info["release_date"]}\n')
-
+    log.write(f'Released: {film_info["release_date"]}')
+    log.write()
+    log.write(f'Characters: {len(film_info["characters"])}')
+    log.write(', '.join(sorted(requests.get(chara).json()["name"] for chara in film_info["characters"])))
+    log.write()
+    log.write(f'Planets: {len(film_info["planets"])}')
+    log.write(', '.join(sorted(requests.get(plane).json()["name"] for plane in film_info["planets"])))
+    log.write()
+    log.write(f'Starships: {len(film_info["starships"])}')
+    log.write(', '.join(sorted(requests.get(stars).json()["name"] for stars in film_info["starships"])))
+    log.write()
+    log.write(f'Vehicles: {len(film_info["vehicles"])}')
+    log.write(', '.join(sorted(requests.get(vehic).json()["name"] for vehic in film_info["vehicles"])))
+    log.write()
+    log.write(f'Species: {len(film_info["species"])}')
+    log.write(', '.join(sorted(requests.get(speci).json()["name"] for speci in film_info["species"])))
+    log.write()
     #for category in ["characters", "planets", "starships", "vehicles", "species"]:
         #data = retrieve_data(film_info[category])
         #names = sorted([item["name"] for item in data])
